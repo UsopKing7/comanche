@@ -1,0 +1,49 @@
+{
+  "compilerOptions": {
+    /* --------- Target & Módulos --------- */
+    "target": "ES2023",                   // Node 22 soporta ES2023
+    "module": "NodeNext",                 // ESM nativo
+    "moduleResolution": "nodenext",       // Resolución ESM + CJS
+
+    /* --------- Librerías --------- */
+    "lib": ["ES2023"],                    // Librerías JS actualizadas
+    "types": ["node"],                    // Tipos de Node
+    "resolveJsonModule": true,            // Importar JSON como módulos
+
+    /* --------- Compatibilidad ESM --------- */
+    "esModuleInterop": true,              // Compatibilidad con imports comunes
+    "allowSyntheticDefaultImports": true, // Importaciones por defecto sintéticas
+    "isolatedModules": true,              // Asegura que cada archivo pueda transpilarse solo
+
+    /* --------- Paths & Directorios --------- */
+    "outDir": "./dist",                   // Carpeta de salida
+    "rootDir": "./src",                   // Carpeta de código fuente
+    "paths": {                            // Alias modernos
+    },
+
+    /* --------- Seguridad y Calidad --------- */
+    "strict": true,                       // Modo estricto
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "exactOptionalPropertyTypes": true,
+    "useUnknownInCatchVariables": true,
+    "forceConsistentCasingInFileNames": true,
+
+    /* --------- Optimización --------- */
+    "skipLibCheck": true,                 // Evita checks innecesarios en node_modules
+    "incremental": true,                  // Compilación incremental
+    "tsBuildInfoFile": "./buildcache/.tsbuildinfo",
+
+    /* --------- Buenas prácticas --------- */
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+
+    /* --------- Debug --------- */
+    "sourceMap": true,                    // Mapas para depuración
+    "noEmitOnError": true                 // No emitir si hay errores
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "build", "buildcache", "dist"]
+}
