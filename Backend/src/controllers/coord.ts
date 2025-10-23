@@ -9,7 +9,6 @@ try {
     `;
     const result = await pool.query(query);
 
-    // Formatear como FeatureCollection
     const geojson = {
       type: "FeatureCollection",
       features: result.rows.map((row: any) => ({
@@ -28,3 +27,43 @@ try {
     res.status(500).send("Error en el servidor");
   }
 }
+export const puyas_info = async (_req: Request, res: Response) => {
+  try {
+    const query = `
+      SELECT 
+        p.id, 
+        p.conteopuyas_id, 
+        p.nombre_cientifico, 
+        p.nombre_comun,
+        p.edad_estimada, 
+        p.estado_floracion, 
+        p.observaciones,
+        ST_AsGeoJSON(ST_Transform(c.geom, 4326))::json AS geometry
+      FROM "ConteoPuyas" c
+      JOIN "puyas_info" p ON c.id = p.conteopuyas_id;
+    `;
+    const result = await pool.query(query);
+
+    const geojson = {
+      type: "FeatureCollection",
+      features: result.rows.map((row: any) => ({
+        type: "Feature",
+        geometry: row.geometry, // Esto ahora es un objeto GeoJSON válido
+        properties: {
+          id: row.id,
+          fid: row.conteopuyas_id,
+          nombre_cientifico: row.nombre_cientifico,
+          nombre_comun: row.nombre_comun,
+          edad_estimada: row.edad_estimada,
+          estado_floracion: row.estado_floracion,
+          observaciones: row.observaciones,
+        },
+      })),
+    };
+
+    return res.json(geojson);
+  } catch (error) {
+    console.error("Error en puyas_info:", error);
+    return res.status(500).send("Error en el servidor");
+  }
+};
