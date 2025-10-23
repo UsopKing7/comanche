@@ -20,12 +20,13 @@ export const App = () => {
   useEffect(() => {
     if (map.current) return;
 
-    const COMANCHE_COORDS: [number, number] = [-68.5017, -17.0832];
+    // NUEVAS COORDENADAS - Actualizadas con tu ubicación
+    const TARGET_COORDS: [number, number] = [-68.42345071386454, -16.965480458906463];
 
     map.current = new mapboxgl.Map({
       container: mapContainer.current!,
-      style: "mapbox://styles/mapbox/satellite-v9",
-      center: COMANCHE_COORDS,
+      style: "mapbox://styles/mapbox/navigation-day-v1",
+      center: TARGET_COORDS, // Usar las nuevas coordenadas
       zoom: 12,
       pitch: 45,
       bearing: 20,
@@ -42,8 +43,9 @@ export const App = () => {
       map.current!.setTerrain({ source: "mapbox-dem", exaggeration: 2.5 });
       map.current!.setLight({ anchor: "viewport", intensity: 0.9 });
 
+      // Volar directamente a las nuevas coordenadas
       map.current!.flyTo({
-        center: COMANCHE_COORDS,
+        center: TARGET_COORDS,
         zoom: 14,
         pitch: 60,
         bearing: 30,
@@ -124,11 +126,11 @@ export const App = () => {
         console.error("❌ Error al cargar datos GeoJSON:", err);
       }
 
-      // Marcador del centro
+      // Marcador en las nuevas coordenadas
       new mapboxgl.Marker({ color: "#ff4f00" })
-        .setLngLat(COMANCHE_COORDS)
+        .setLngLat(TARGET_COORDS)
         .setPopup(
-          new mapboxgl.Popup().setHTML(`<b>Comanche, La Paz</b><br>Centro del mapa`)
+          new mapboxgl.Popup().setHTML(`<b>Ubicación Objetivo</b><br>Lat: -16.96548<br>Lon: -68.42345`)
         )
         .addTo(map.current!);
     });
@@ -145,8 +147,8 @@ export const App = () => {
       <div className="map-container" ref={mapContainer}>
         <div className="map-overlay">
           <div className="map-title">
-            <h1>🗺️ Comanche 3D Map</h1>
-            <p>Explora Comanche con tus puntos de PostGIS</p>
+            <h1>🗺️ Mapa de Puyas</h1>
+            <p>Ubicación: -16.96548, -68.42345</p>
             <p><small>Pasa el cursor sobre los puntos verdes para ver información</small></p>
           </div>
 
@@ -155,7 +157,7 @@ export const App = () => {
               className="control-btn"
               onClick={() =>
                 map.current?.flyTo({
-                  center: [-68.5017, -17.0832],
+                  center: [-68.42345071386454, -16.965480458906463], // Nuevas coordenadas
                   zoom: 14,
                   pitch: 60,
                   bearing: 30,
@@ -164,7 +166,7 @@ export const App = () => {
                 })
               }
             >
-              Ir a Comanche
+              Ir a Ubicación
             </button>
 
             <button
@@ -179,6 +181,21 @@ export const App = () => {
               }
             >
               Vista 2D
+            </button>
+
+            <button
+              className="control-btn"
+              onClick={() =>
+                map.current?.flyTo({
+                  center: [-68.42345071386454, -16.965480458906463],
+                  zoom: 16,
+                  pitch: 75,
+                  bearing: 0,
+                  speed: 1.0,
+                })
+              }
+            >
+              Vista Detallada
             </button>
           </div>
         </div>
@@ -258,7 +275,7 @@ export const App = () => {
           padding:15px 20px;
           margin-bottom:15px; 
           box-shadow:0 4px 12px rgba(0,0,0,0.1);
-          max-width:350px; 
+          max-width:380px; 
           backdrop-filter:blur(5px); 
           border:1px solid rgba(255,255,255,0.5);
         }
@@ -284,6 +301,7 @@ export const App = () => {
         .map-controls { 
           display:flex; 
           gap:10px; 
+          flex-wrap: wrap;
           pointer-events:auto; 
         }
         
@@ -300,6 +318,7 @@ export const App = () => {
           transition:all 0.2s ease; 
           backdrop-filter:blur(5px);
           border:1px solid rgba(255,255,255,0.5);
+          white-space: nowrap;
         }
         
         .control-btn:hover {
