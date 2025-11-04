@@ -2,10 +2,10 @@ import psycopg2
 import random
 
 conn = psycopg2.connect(
-    host="localhost",
-    database="comanche_db",
-    user="root",
-    password="postgres",
+    host="db.ocoqrklclzfwzrxnikej.supabase.co",
+    database="postgres",
+    user="postgres",
+    password="g!T2LHR%+5@ndq2",
     port=5432
 )
 cur = conn.cursor()

@@ -101,3 +101,69 @@ export const tracker = async (_req: Request, res: Response) => {
     return res.status(500).send("Error en el servidor")
   }
 }
+
+export const curva20s = async (_req: Request, res: Response) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        id, 
+        contour, 
+        inline_fid, 
+        ST_AsGeoJSON(ST_Transform(geom, 4326)) AS geometry
+      FROM "curvas20s";
+    `);
+
+    // Convertir a GeoJSON válido
+    const geoJSON = {
+      type: "FeatureCollection",
+      features: result.rows.map(row => ({
+        type: "Feature",
+        properties: {
+          id: row.id,
+          contour: row.contour,
+          inline_fid: row.inline_fid
+        },
+        geometry: JSON.parse(row.geometry)
+      }))
+    };
+
+    // devolver como GeoJSON
+    return res.json(geoJSON);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send("Error en el servidor");
+  }
+}
+
+export const curva5s = async (_req: Request, res: Response) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        id, 
+        contour, 
+        inline_fid, 
+        ST_AsGeoJSON(ST_Transform(geom, 4326)) AS geometry
+      FROM "curvas5s";
+    `);
+
+    // Convertir a GeoJSON válido
+    const geoJSON = {
+      type: "FeatureCollection",
+      features: result.rows.map(row => ({
+        type: "Feature",
+        properties: {
+          id: row.id,
+          contour: row.contour,
+          inline_fid: row.inline_fid
+        },
+        geometry: JSON.parse(row.geometry)
+      }))
+    };
+
+    // devolver como GeoJSON
+    return res.json(geoJSON);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send("Error en el servidor");
+  }
+};

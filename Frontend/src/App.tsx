@@ -153,7 +153,7 @@ export const App = () => {
             .addTo(map.current!);
         });
 
-        // 🚶 Track de recorrido
+        // 🚶 Track de recorrido (color rojo)
         const resTrack = await fetch("http://localhost:3333/api/track");
         const trackGeoJSON = await resTrack.json();
 
@@ -168,9 +168,51 @@ export const App = () => {
           source: "track",
           layout: { "line-join": "round", "line-cap": "round" },
           paint: {
-            "line-color": "#0000ff",
+            "line-color": "#ff0000", // Color rojo
             "line-width": 4,
             "line-opacity": 0.8,
+          },
+        });
+
+        // 🏞️ Curvas de nivel 20s (color naranja)
+        const resCurvas20s = await fetch("http://localhost:3333/api/curva20s");
+        const curvas20s = await resCurvas20s.json();
+
+        map.current!.addSource("curvas20s", {
+          type: "geojson",
+          data: curvas20s,
+        });
+
+        map.current!.addLayer({
+          id: "curvas20s-line",
+          type: "line",
+          source: "curvas20s",
+          layout: { "line-join": "round", "line-cap": "round" },
+          paint: {
+            "line-color": "#ff8c00", // Color naranja
+            "line-width": 3,
+            "line-opacity": 0.8,
+          },
+        });
+
+        // 🏞️ Curvas de nivel 5s (color azul)
+        const resCurvas5s = await fetch("http://localhost:3333/api/curva5s");
+        const curvas5s = await resCurvas5s.json();
+
+        map.current!.addSource("curvas5s", {
+          type: "geojson",
+          data: curvas5s,
+        });
+
+        map.current!.addLayer({
+          id: "curvas5s-line",
+          type: "line",
+          source: "curvas5s",
+          layout: { "line-join": "round", "line-cap": "round" },
+          paint: {
+            "line-color": "#0066ff", // Color azul
+            "line-width": 1,
+            "line-opacity": 0.6,
           },
         });
 
@@ -201,9 +243,27 @@ export const App = () => {
       <div className="map-container" ref={mapContainer}>
         <div className="map-overlay">
           <div className="map-title">
-            <h1>🗺️ Mapa de Puyas y Recorrido</h1>
+            <h1>🗺️ Mapa de Puyas, Recorrido y Curvas de Nivel</h1>
             <p>Ubicación: -16.96548, -68.42345</p>
             <p><small>Pasa el cursor sobre los puntos verdes para ver información</small></p>
+            <div className="map-legend">
+              <div className="legend-item">
+                <div className="legend-color" style={{backgroundColor: "#00ff4c"}}></div>
+                <span>Puyas</span>
+              </div>
+              <div className="legend-item">
+                <div className="legend-color" style={{backgroundColor: "#ff0000"}}></div>
+                <span>Track de recorrido</span>
+              </div>
+              <div className="legend-item">
+                <div className="legend-color" style={{backgroundColor: "#ff8c00"}}></div>
+                <span>Curvas 20m</span>
+              </div>
+              <div className="legend-item">
+                <div className="legend-color" style={{backgroundColor: "#0066ff"}}></div>
+                <span>Curvas 5m</span>
+              </div>
+            </div>
           </div>
 
           <div className="map-controls">
@@ -249,6 +309,38 @@ export const App = () => {
               }
             >
               Vista Detallada
+            </button>
+
+            <button
+              className="control-btn"
+              onClick={() => {
+                if (map.current) {
+                  const curvas20sVisible = map.current.getLayoutProperty('curvas20s-line', 'visibility');
+                  map.current.setLayoutProperty(
+                    'curvas20s-line', 
+                    'visibility', 
+                    curvas20sVisible === 'visible' ? 'none' : 'visible'
+                  );
+                }
+              }}
+            >
+              Toggle Curvas 20m
+            </button>
+
+            <button
+              className="control-btn"
+              onClick={() => {
+                if (map.current) {
+                  const curvas5sVisible = map.current.getLayoutProperty('curvas5s-line', 'visibility');
+                  map.current.setLayoutProperty(
+                    'curvas5s-line', 
+                    'visibility', 
+                    curvas5sVisible === 'visible' ? 'none' : 'visible'
+                  );
+                }
+              }}
+            >
+              Toggle Curvas 5m
             </button>
           </div>
         </div>
@@ -301,10 +393,22 @@ export const App = () => {
         .map-title {
           background: rgba(255,255,255,0.9);
           border-radius:12px; padding:15px 20px; margin-bottom:10px;
-          box-shadow:0 4px 10px rgba(0,0,0,0.1); max-width:400px;
+          box-shadow:0 4px 10px rgba(0,0,0,0.1); max-width:450px;
         }
         .map-title h1 { margin:0 0 5px 0; font-size:1.3rem; color:#2b2b2b; }
         .map-title p { margin:0 0 3px 0; font-size:0.9rem; color:#555; }
+
+        .map-legend {
+          margin-top:10px; padding-top:10px; border-top:1px solid rgba(0,0,0,0.1);
+          pointer-events:auto;
+        }
+        .legend-item {
+          display:flex; align-items:center; margin-bottom:5px;
+        }
+        .legend-color {
+          width:16px; height:16px; border-radius:3px; margin-right:8px;
+          border:1px solid rgba(0,0,0,0.2);
+        }
 
         .map-controls { display:flex; gap:10px; pointer-events:auto; flex-wrap: wrap; }
         .control-btn {
