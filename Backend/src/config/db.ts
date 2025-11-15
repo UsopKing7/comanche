@@ -1,14 +1,14 @@
 import { Pool } from 'pg'
 import env from 'dotenv'
+import { DATABASE_URL } from './env'
 
 env.config()
 
 export const pool = new Pool({
-  host: process.env.DB_HOST,
-  port: Number(process.env.DB_PORT),
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME
+  connectionString: DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
 })
 
 export const connectionDB = async () => {
