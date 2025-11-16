@@ -1,7 +1,10 @@
 import { Pool } from 'pg'
 import env from 'dotenv'
+import dns from 'dns'
 
 env.config()
+
+dns.setDefaultResultOrder('ipv4first')
 
 export const pool = new Pool({
   host: process.env.DB_HOST,
@@ -9,7 +12,9 @@ export const pool = new Pool({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   port: Number(process.env.DB_PORT),
-  
+  ssl: {
+    rejectUnauthorized: false
+  }
 })
 
 export const connectionDB = async () => {
