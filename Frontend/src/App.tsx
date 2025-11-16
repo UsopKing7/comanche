@@ -108,7 +108,7 @@ export const App = () => {
       });
 
       try {
-        const resPuyas = await fetch("http://localhost:3333/api/puyas_info");
+        const resPuyas = await fetch("https://comanche-7g0j.onrender.com/api/puyas_info");
         const puyas = await resPuyas.json();
 
         map.current!.addSource("puyas", { type: "geojson", data: puyas });
@@ -165,7 +165,7 @@ export const App = () => {
             .addTo(map.current!);
         });
 
-        const resTrack = await fetch("http://localhost:3333/api/track");
+        const resTrack = await fetch("https://comanche-7g0j.onrender.com/api/track");
         const trackGeoJSON = await resTrack.json();
 
         map.current!.addSource("track", {
@@ -185,7 +185,7 @@ export const App = () => {
           },
         });
 
-        const resCurvas20s = await fetch("http://localhost:3333/api/curva20s");
+        const resCurvas20s = await fetch("https://comanche-7g0j.onrender.com/api/curva20s");
         const curvas20s = await resCurvas20s.json();
 
         map.current!.addSource("curvas20s", {
@@ -205,7 +205,7 @@ export const App = () => {
           },
         });
 
-        const resCurvas5s = await fetch("http://localhost:3333/api/curva5s");
+        const resCurvas5s = await fetch("https://comanche-7g0j.onrender.com/api/curva5s");
         const curvas5s = await resCurvas5s.json();
 
         map.current!.addSource("curvas5s", {
