@@ -119,7 +119,7 @@ const curva20s = async (_req, res) => {
                     contour: row.contour,
                     inline_fid: row.inline_fid
                 },
-                geometry: JSON.parse(row.geometry) // IMPORTANTE: parsear el string GeoJSON
+                geometry: JSON.parse(row.geometry)
             }))
         };
         // devolver como GeoJSON
