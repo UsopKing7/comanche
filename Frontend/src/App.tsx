@@ -25,6 +25,7 @@ export const App = () => {
   const [plantaSeleccionada, setPlantaSeleccionada] = useState<PlantaInfo | null>(null);
   const [mostrarPanel, setMostrarPanel] = useState(false);
   const [mostrarControles, setMostrarControles] = useState(true);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [layers, setLayers] = useState<LayerControl>({
     puyas: true,
     track: true,
@@ -33,6 +34,16 @@ export const App = () => {
     buildings3d: true
   });
 
+  // Detectar cambios en el tamaño de la pantalla
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   useEffect(() => {
     if (map.current) return;
 
@@ -40,7 +51,7 @@ export const App = () => {
 
     map.current = new mapboxgl.Map({
       container: mapContainer.current!,
-      style: "mapbox://styles/mapbox/navigation-night-v1",
+      style: "mapbox://styles/mapbox/outdoors-v11", // Cambiado a un estilo más básico
       center: TARGET_COORDS,
       zoom: 13,
       pitch: 45,
@@ -49,69 +60,83 @@ export const App = () => {
     });
 
     map.current.on("load", async () => {
-      map.current!.addSource("mapbox-dem", {
-        type: "raster-dem",
-        url: "mapbox://mapbox.mapbox-terrain-dem-v1",
-        tileSize: 512,
-        maxzoom: 14,
-      });
-      map.current!.setTerrain({ source: "mapbox-dem", exaggeration: 1 });
-      map.current!.setLight({ anchor: "viewport", intensity: 0.9 });
-
-      const layers = map.current!.getStyle().layers;
-      const labelLayerId = layers.find(
-        (layer) => layer.type === "symbol" && layer.layout && layer.layout["text-field"]
-      )?.id;
-
-      map.current!.addLayer(
-        {
-          id: "3d-buildings",
-          source: "composite",
-          "source-layer": "building",
-          filter: ["==", "extrude", "true"],
-          type: "fill-extrusion",
-          minzoom: 15,
-          paint: {
-            "fill-extrusion-color": "#d9d9d9",
-            "fill-extrusion-height": [
-              "interpolate",
-              ["linear"],
-              ["zoom"],
-              15,
-              0,
-              15.05,
-              ["get", "height"],
-            ],
-            "fill-extrusion-base": [
-              "interpolate",
-              ["linear"],
-              ["zoom"],
-              15,
-              0,
-              15.05,
-              ["get", "min_height"],
-            ],
-            "fill-extrusion-opacity": 0.8,
-          },
-        },
-        labelLayerId
-      );
-
-      map.current!.flyTo({
-        center: TARGET_COORDS,
-        zoom: 15,
-        pitch: 60,
-        bearing: 30,
-        speed: 0.6,
-        curve: 1.4,
-        essential: true,
-      });
-
       try {
+        // Añadir terreno
+        map.current!.addSource("mapbox-dem", {
+          type: "raster-dem",
+          url: "mapbox://mapbox.mapbox-terrain-dem-v1",
+          tileSize: 512,
+          maxzoom: 14,
+        });
+        map.current!.setTerrain({ source: "mapbox-dem", exaggeration: 1 });
+        
+        // Configurar iluminación
+        map.current!.setLight({ 
+          anchor: "viewport", 
+          intensity: 0.9 
+        });
+
+        // Añadir edificios 3D
+        const layers = map.current!.getStyle().layers;
+        const labelLayerId = layers.find(
+          (layer) => layer.type === "symbol" && layer.layout && layer.layout["text-field"]
+        )?.id;
+
+        if (labelLayerId) {
+          map.current!.addLayer(
+            {
+              id: "3d-buildings",
+              source: "composite",
+              "source-layer": "building",
+              filter: ["==", "extrude", "true"],
+              type: "fill-extrusion",
+              minzoom: 15,
+              paint: {
+                "fill-extrusion-color": "#d9d9d9",
+                "fill-extrusion-height": [
+                  "interpolate",
+                  ["linear"],
+                  ["zoom"],
+                  15,
+                  0,
+                  15.05,
+                  ["get", "height"],
+                ],
+                "fill-extrusion-base": [
+                  "interpolate",
+                  ["linear"],
+                  ["zoom"],
+                  15,
+                  0,
+                  15.05,
+                  ["get", "min_height"],
+                ],
+                "fill-extrusion-opacity": 0.8,
+              },
+            },
+            labelLayerId
+          );
+        }
+
+        // Vuelo inicial a la ubicación
+        map.current!.flyTo({
+          center: TARGET_COORDS,
+          zoom: 15,
+          pitch: 60,
+          bearing: 30,
+          speed: 0.6,
+          curve: 1.4,
+          essential: true,
+        });
+
+        // Cargar datos de Puyas
         const resPuyas = await fetch("https://comanche-7g0j.onrender.com/api/puyas_info");
         const puyas = await resPuyas.json();
 
-        map.current!.addSource("puyas", { type: "geojson", data: puyas });
+        map.current!.addSource("puyas", { 
+          type: "geojson", 
+          data: puyas 
+        });
 
         map.current!.addLayer({
           id: "puyas-points",
@@ -125,6 +150,7 @@ export const App = () => {
           },
         });
 
+        // Eventos para las puyas
         map.current!.on("mouseenter", "puyas-points", (e) => {
           map.current!.getCanvas().style.cursor = "pointer";
           if (!e.features || e.features.length === 0) return;
@@ -165,6 +191,7 @@ export const App = () => {
             .addTo(map.current!);
         });
 
+        // Cargar track
         const resTrack = await fetch("https://comanche-7g0j.onrender.com/api/track");
         const trackGeoJSON = await resTrack.json();
 
@@ -185,6 +212,7 @@ export const App = () => {
           },
         });
 
+        // Cargar curvas 20s
         const resCurvas20s = await fetch("https://comanche-7g0j.onrender.com/api/curva20s");
         const curvas20s = await resCurvas20s.json();
 
@@ -205,6 +233,7 @@ export const App = () => {
           },
         });
 
+        // Cargar curvas 5s
         const resCurvas5s = await fetch("https://comanche-7g0j.onrender.com/api/curva5s");
         const curvas5s = await resCurvas5s.json();
 
@@ -225,6 +254,7 @@ export const App = () => {
           },
         });
 
+        // Ajustar bounds al track
         const bounds = new mapboxgl.LngLatBounds();
         trackGeoJSON.features.forEach((feature: any) => {
           const coords = feature.geometry.coordinates.flat(Infinity);
@@ -238,12 +268,26 @@ export const App = () => {
         console.error("❌ Error al cargar datos:", err);
       }
     });
+
+    // Manejar errores de carga de tiles
+    map.current.on('error', (e) => {
+      console.warn('Error de mapa:', e);
+    });
+
   }, []);
 
   useEffect(() => {
     if (!map.current) return;
+    
+    // Añadir controles básicos
     map.current.addControl(new mapboxgl.NavigationControl(), "top-right");
     map.current.addControl(new mapboxgl.FullscreenControl());
+    
+    // Añadir control de escala
+    map.current.addControl(new mapboxgl.ScaleControl({
+      maxWidth: 100,
+      unit: 'metric'
+    }));
   }, []);
 
   const toggleLayer = (layerId: keyof LayerControl) => {
@@ -294,11 +338,11 @@ export const App = () => {
     <>
       <div className="map-container" ref={mapContainer}>
         {/* Control Panel */}
-        <div className={`control-panel ${mostrarControles ? "expanded" : "collapsed"}`}>
+        <div className={`control-panel ${mostrarControles ? "expanded" : "collapsed"} ${isMobile ? "mobile" : ""}`}>
           <div className="control-panel-header">
             <div className="header-content">
               <div className="panel-icon">⚙️</div>
-              <h3>Control de Capas</h3>
+              {(!isMobile || mostrarControles) && <h3>Control de Capas</h3>}
             </div>
             <button 
               className="toggle-panel-btn"
@@ -406,7 +450,7 @@ export const App = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="quick-actions">
+        <div className={`quick-actions ${isMobile ? "mobile" : ""}`}>
           <button
             className="action-btn primary"
             onClick={() =>
@@ -420,7 +464,7 @@ export const App = () => {
               })
             }
           >
-            Vista Principal
+            {isMobile ? "Principal" : "Vista Principal"}
           </button>
 
           <button
@@ -434,7 +478,7 @@ export const App = () => {
               })
             }
           >
-            Vista 2D
+            {isMobile ? "2D" : "Vista 2D"}
           </button>
 
           <button
@@ -448,12 +492,12 @@ export const App = () => {
               })
             }
           >
-            Vista Detallada
+            {isMobile ? "Detalle" : "Vista Detallada"}
           </button>
         </div>
 
         {/* Plant Info Panel */}
-        <div className={`info-panel ${mostrarPanel ? "visible" : ""}`}>
+        <div className={`info-panel ${mostrarPanel ? "visible" : ""} ${isMobile ? "mobile" : ""}`}>
           <div className="info-panel-content">
             <div className="info-panel-header">
               <h3>Información de la Planta</h3>
@@ -492,6 +536,18 @@ export const App = () => {
             )}
           </div>
         </div>
+
+        {/* Mobile Menu Button */}
+        {isMobile && (
+          <div className="mobile-menu">
+            <button 
+              className="mobile-menu-btn"
+              onClick={() => setMostrarControles(!mostrarControles)}
+            >
+              ☰
+            </button>
+          </div>
+        )}
       </div>
 
       <style>{`
@@ -522,13 +578,34 @@ export const App = () => {
           min-width: 280px;
         }
 
+        .control-panel.mobile {
+          top: 80px;
+          right: 12px;
+          left: 12px;
+          min-width: unset;
+        }
+
         .control-panel.collapsed {
           width: 60px;
           height: 60px;
         }
 
+        .control-panel.collapsed.mobile {
+          width: 50px;
+          height: 50px;
+          top: 12px;
+          right: 12px;
+          left: auto;
+        }
+
         .control-panel.expanded {
           width: 320px;
+        }
+
+        .control-panel.expanded.mobile {
+          width: calc(100vw - 24px);
+          max-height: 70vh;
+          overflow-y: auto;
         }
 
         .control-panel-header {
@@ -540,6 +617,7 @@ export const App = () => {
           color: white;
           cursor: pointer;
           transition: all 0.3s ease;
+          min-height: 60px;
         }
 
         .control-panel-header:hover {
@@ -577,6 +655,7 @@ export const App = () => {
           font-size: 1rem;
           font-weight: 600;
           transition: all 0.2s ease;
+          flex-shrink: 0;
         }
 
         .toggle-panel-btn:hover {
@@ -717,6 +796,15 @@ export const App = () => {
           z-index: 5;
         }
 
+        .quick-actions.mobile {
+          top: auto;
+          bottom: 24px;
+          left: 50%;
+          transform: translateX(-50%);
+          flex-direction: row;
+          gap: 6px;
+        }
+
         .action-btn {
           padding: 12px 20px;
           background: rgba(255, 255, 255, 0.95);
@@ -731,6 +819,13 @@ export const App = () => {
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
           min-width: 140px;
           text-align: center;
+        }
+
+        .quick-actions.mobile .action-btn {
+          min-width: 100px;
+          padding: 10px 16px;
+          font-size: 0.8rem;
+          white-space: nowrap;
         }
 
         .action-btn.primary {
@@ -759,8 +854,21 @@ export const App = () => {
           width: 320px;
         }
 
+        .info-panel.mobile {
+          top: auto;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          width: 100%;
+          transform: translateY(100%);
+        }
+
         .info-panel.visible {
           transform: translateY(-50%) translateX(0);
+        }
+
+        .info-panel.mobile.visible {
+          transform: translateY(0);
         }
 
         .info-panel-content {
@@ -772,6 +880,12 @@ export const App = () => {
             0 2px 8px rgba(0, 0, 0, 0.08);
           border: 1px solid rgba(255, 255, 255, 0.8);
           overflow: hidden;
+        }
+
+        .info-panel.mobile .info-panel-content {
+          border-radius: 12px 12px 0 0;
+          max-height: 50vh;
+          overflow-y: auto;
         }
 
         .info-panel-header {
@@ -848,6 +962,35 @@ export const App = () => {
           font-size: 0.9rem;
         }
 
+        /* Mobile Menu */
+        .mobile-menu {
+          position: absolute;
+          top: 12px;
+          left: 12px;
+          z-index: 15;
+        }
+
+        .mobile-menu-btn {
+          width: 50px;
+          height: 50px;
+          border-radius: 8px;
+          background: rgba(255, 255, 255, 0.95);
+          backdrop-filter: blur(16px);
+          border: 1px solid rgba(255, 255, 255, 0.8);
+          font-size: 1.2rem;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+          transition: all 0.2s ease;
+        }
+
+        .mobile-menu-btn:hover {
+          transform: scale(1.05);
+          background: rgba(255, 255, 255, 1);
+        }
+
         /* Popup Styles */
         .click-popup-content h4 {
           margin: 0 0 8px 0;
@@ -868,24 +1011,60 @@ export const App = () => {
 
         /* Responsive */
         @media (max-width: 768px) {
-          .control-panel.expanded {
+          .control-panel.expanded:not(.mobile) {
             width: calc(100vw - 48px);
             right: 24px;
           }
           
-          .info-panel {
+          .info-panel:not(.mobile) {
             width: calc(100vw - 48px);
             left: 24px;
           }
           
-          .quick-actions {
+          .quick-actions:not(.mobile) {
             flex-direction: row;
             flex-wrap: wrap;
           }
           
-          .action-btn {
+          .action-btn:not(.mobile) {
             min-width: 120px;
             padding: 10px 16px;
+          }
+
+          .info-row {
+            flex-direction: column;
+            gap: 4px;
+            margin-bottom: 12px;
+          }
+
+          .info-label {
+            width: 100%;
+            font-size: 0.8rem;
+          }
+
+          .info-value {
+            font-size: 0.8rem;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .control-panel.expanded.mobile {
+            width: calc(100vw - 24px);
+          }
+
+          .quick-actions.mobile {
+            bottom: 12px;
+          }
+
+          .quick-actions.mobile .action-btn {
+            min-width: 80px;
+            padding: 8px 12px;
+            font-size: 0.75rem;
+          }
+
+          .bulk-actions {
+            grid-template-columns: 1fr;
+            gap: 8px;
           }
         }
 
@@ -906,6 +1085,20 @@ export const App = () => {
 
         .control-panel-content::-webkit-scrollbar-thumb:hover {
           background: #94a3b8;
+        }
+
+        /* Mapbox logo adjustments for mobile */
+        .mapboxgl-ctrl-bottom-left,
+        .mapboxgl-ctrl-bottom-right {
+          z-index: 5;
+        }
+
+        @media (max-width: 768px) {
+          .mapboxgl-ctrl-bottom-left .mapboxgl-ctrl,
+          .mapboxgl-ctrl-bottom-right .mapboxgl-ctrl {
+            margin: 0 8px 8px 0;
+            font-size: 0.7rem;
+          }
         }
       `}</style>
     </>
