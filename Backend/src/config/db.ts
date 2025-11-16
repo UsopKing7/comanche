@@ -1,16 +1,15 @@
 import { Pool } from 'pg'
 import env from 'dotenv'
-import { DATABASE_URL } from './env'
-import dns from 'node:dns/promises'
 
 env.config()
 
-// Render forces IPv6 sometimes → break Supabase
-dns.setDefaultResultOrder('ipv4first')
-
 export const pool = new Pool({
-  connectionString: DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  port: Number(process.env.DB_PORT),
+  
 })
 
 export const connectionDB = async () => {
